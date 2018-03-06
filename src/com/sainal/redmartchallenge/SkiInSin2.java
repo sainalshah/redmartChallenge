@@ -4,20 +4,22 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
-public class SkiInSin {
+public class SkiInSin2 {
 
 	private int sizeX, sizeY = -1;
 	private int[][] grid;
-
-	private PathProperty[][] visitedProp;
+	private HashMap<String, PathProperty> visitedProp;
 
 	public static void main(String[] args) {
 		long startTime = System.nanoTime();
-		SkiInSin obj = new SkiInSin();
+		SkiInSin2 obj = new SkiInSin2();
 		obj.getInput(args[0]);
 		System.out.println(obj.searchPath().display());
+
+		// estimate the time taken to run the program
 		long endTime = System.nanoTime();
 		System.out.println("Took " + (endTime - startTime) + " ns");
 	}
@@ -35,7 +37,7 @@ public class SkiInSin {
 				sizeX = Integer.parseInt(size[0]);
 				sizeY = Integer.parseInt(size[1]);
 				grid = new int[sizeX][sizeY];
-				visitedProp = new PathProperty[sizeX][sizeY];
+
 				System.out.println("Rows: " + sizeX);
 				System.out.println("Columns: " + sizeY);
 			}
@@ -62,11 +64,21 @@ public class SkiInSin {
 	}
 
 	public PathProperty searchPath() {
+
+		// initailize the visitedProp hashMap
+		visitedProp = new HashMap<String, PathProperty>();
 		// initialize to null, later can be assigned with a valid PathProperty
 		PathProperty res = null;
 		for (int i = 0; i < sizeX; i++) {
 			for (int j = 0; j < sizeY; j++) {
-				PathProperty curProp = recursiveDFS(i, j, new PathProperty(grid[i][j]));
+				String memoKey = "" + i + j;
+				PathProperty curProp;
+				if (visitedProp.containsKey(memoKey)) {
+					curProp = visitedProp.get(memoKey);
+				} else {
+					curProp = recursiveDFS(i, j, new PathProperty(grid[i][j]));
+					visitedProp.put(memoKey, curProp);
+				}
 				if (res == null || isPropGreater(curProp, res)) {
 					res = curProp;
 				}
@@ -80,7 +92,7 @@ public class SkiInSin {
 
 		// initialize to null, later can be assigned with a valid PathProperty
 		PathProperty res = prop;
-		List<Position> neighbours = getNeighbours(new Position(x, y));
+		List<Position> neighbours = getNeighbours(x, y);
 
 		for (Position pos : neighbours) {
 
@@ -89,14 +101,7 @@ public class SkiInSin {
 				PathProperty clonedProp = cloneProp(prop);
 				clonedProp.incrementLength();
 				clonedProp.setLowestElevation(grid[pos.getX()][pos.getY()]);
-
-				PathProperty curProp;
-				//check if a pre-computed length exists in corresponding PathProperty 2D array
-				if (visitedProp[pos.getX()][pos.getY()] != null) {
-					curProp = visitedProp[pos.getX()][pos.getY()];
-				} else {
-					curProp = recursiveDFS(pos.getX(), pos.getY(), clonedProp);
-				}
+				PathProperty curProp = recursiveDFS(pos.getX(), pos.getY(), clonedProp);
 				if (isPropGreater(curProp, res)) {
 					res = curProp;
 				}
@@ -105,19 +110,19 @@ public class SkiInSin {
 		return res;
 	}
 
-	private List<Position> getNeighbours(Position current) {
+	private List<Position> getNeighbours(int x, int y) {
 		List<Position> neighbours = new ArrayList<Position>();
-		if (current.getX() > 0) {
-			neighbours.add(new Position(current.getX() - 1, current.getY()));
+		if (x > 0) {
+			neighbours.add(new Position(x - 1, y));
 		}
-		if (current.getY() > 0) {
-			neighbours.add(new Position(current.getX(), current.getY() - 1));
+		if (y > 0) {
+			neighbours.add(new Position(x, y - 1));
 		}
-		if (current.getX() < sizeX - 1) {
-			neighbours.add(new Position(current.getX() + 1, current.getY()));
+		if (x < sizeX - 1) {
+			neighbours.add(new Position(x + 1, y));
 		}
-		if (current.getY() < sizeY - 1) {
-			neighbours.add(new Position(current.getX(), current.getY() + 1));
+		if (y < sizeY - 1) {
+			neighbours.add(new Position(x, y + 1));
 		}
 		return neighbours;
 	}
